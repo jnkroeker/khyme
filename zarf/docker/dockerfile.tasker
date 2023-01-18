@@ -1,0 +1,19 @@
+# Build the Go binary
+FROM golang:1.17 as build_tasker
+ENV CGO_ENABLED 0
+ARG BUILD_REF
+
+# Copy the source code into the container.
+COPY . /service
+
+# Build the service binary
+WORKDIR /service/app/services/tasker
+RUN go build -ldflags "-X main.build=${BUILD_REF}"
+
+# Run the Go Binary on Alpine
+FROM alpine:3.14
+ARG BUILD_DATE
+ARG BUILD_REF
+COPY --from=build_tasker /service/app/services/tasker/tasker /service/tasker
+WORKDIR /service 
+CMD ["./tasker"]
