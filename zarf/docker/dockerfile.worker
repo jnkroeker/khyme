@@ -14,6 +14,8 @@ RUN go build -ldflags "-X main.build=${BUILD_REF}"
 FROM alpine:3.14
 ARG BUILD_DATE
 ARG BUILD_REF
+# TODO: how to read an env file from a mounted volume? and thus remove line 18
+COPY --from=build_worker /service/.env /service/.env
 COPY --from=build_worker /service/app/services/worker/worker /service/worker
 WORKDIR /service 
 CMD ["./worker"]
