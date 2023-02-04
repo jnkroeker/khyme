@@ -1,11 +1,14 @@
 
-run:
+run-tasker:
 	go run app/services/tasker/main.go | go run app/tooling/logfmt/main.go
+
+run-worker:
+	go run app/services/worker/main.go | go run app/tooling/logfmt/main.go
 
 # ======================================================================
 # Building containers
 
-TASKER_VERSION := 0.1.0 
+TASKER_VERSION := 0.1.4 
 
 WORKER_VERSION := 0.1.0
 
@@ -40,3 +43,12 @@ worker-image-update:
 
 k8s-apply:
 	kustomize build zarf/k8s/cluster/tasker-pod | kubectl apply -f -
+
+k8s-tasker-logs:
+	kubectl logs -l app=tasker --namespace=khyme-system --all-containers=true -f --tail=100 | go run app/tooling/logfmt/main.go
+
+k8s-worker-logs:
+	kubectl logs -l app=worker --all-containers=true -f --tail=100 | go run app/tooling/logfmt/main.go
+
+k8s-tasker-restart:
+	kubectl rollout restart deployment tasker-pod --namespace=khyme-system

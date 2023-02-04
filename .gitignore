@@ -1,4 +1,7 @@
 # Binaries for programs and plugins
+app/services/tasker/tasker
+app/services/worker/worker
+app/services/metrics/metrics
 *.exe
 *.exe~
 *.dll
