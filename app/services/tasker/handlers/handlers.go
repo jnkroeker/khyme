@@ -12,6 +12,12 @@ import (
 	"expvar"
 	"net/http"
 	"net/http/pprof"
+	"os"
+
+	"github.com/dimfeld/httptreemux/v5"
+	"github.com/jnkroeker/khyme/app/services/tasker/handlers/debug/check"
+	"github.com/jnkroeker/khyme/app/services/tasker/handlers/v1/test"
+	"go.uber.org/zap"
 )
 
 // If you look at the http/pprof GoDoc, all these endpoints already bound to DefaultServerMux
@@ -29,6 +35,40 @@ func DebugStandardLibraryMux() *http.ServeMux {
 	mux.HandleFunc("/debug/pprof/symbol", pprof.Symbol)
 	mux.HandleFunc("/debug/pprof/trace", pprof.Trace)
 	mux.Handle("/debug/vars", expvar.Handler())
+
+	return mux
+}
+
+// extend DebugStandardLibraryMux by adding our own endpoints
+func DebugMux(build string, log *zap.SugaredLogger) http.Handler {
+	mux := DebugStandardLibraryMux()
+
+	// Register debug endpoints
+	check_handlers := check.Handlers{
+		Build: build,
+		Log:   log,
+	}
+	mux.HandleFunc("/debug/readiness", check_handlers.Readiness)
+	mux.HandleFunc("/debug/liveness", check_handlers.Liveness)
+
+	return mux
+}
+
+// contains all the mandatory systems required by handlers
+type APIMuxConfig struct {
+	Shutdown chan os.Signal
+	Log      *zap.SugaredLogger
+}
+
+// constructs an http.Handler with all application routes defined
+func APIMux(cfg APIMuxConfig) *httptreemux.ContextMux {
+	mux := httptreemux.NewContextMux()
+
+	test_handlers := test.Handlers{
+		Log: cfg.Log,
+	}
+
+	mux.Handle(http.MethodGet, "/test", test_handlers.Test)
 
 	return mux
 }
