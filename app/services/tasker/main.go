@@ -135,10 +135,10 @@ func run(log *zap.SugaredLogger) error {
 	log.Infow("startup", "status", "debug router started", "host", cfg.Task.DebugHost)
 
 	// The Debug function returns a mux to listen and serve on for all the debug
-	// related endpoints. this includes the standard library endpoints.
+	// related endpoints. this includes the standard library endpoints and our own.
 
 	// Construct the mux for debugging
-	debugMux := handlers.DebugStandardLibraryMux()
+	debugMux := handlers.DebugMux(build, log)
 
 	// Start the service listening for debug requests
 	// Not concerned about shutting this down with load shedding
@@ -158,12 +158,18 @@ func run(log *zap.SugaredLogger) error {
 	shutdown := make(chan os.Signal, 1)
 	signal.Notify(shutdown, syscall.SIGINT, syscall.SIGTERM)
 
+	// Construct the MUX for the API calls
+	apiMux := handlers.APIMux(handlers.APIMuxConfig{
+		Shutdown: shutdown,
+		Log:      log,
+	})
+
 	// In order to implement load-shedding, (aka on shutdown the goroutines currently handling requests can complete)
 	// we need an http server. Load-shedding wont work on http.ListenAndServe
 	// Construct a server to service the requests against the mux.
 	api := http.Server{
 		Addr:         cfg.Task.ServiceHost,
-		Handler:      nil,
+		Handler:      apiMux,
 		ReadTimeout:  cfg.Task.ReadTimeout,
 		WriteTimeout: cfg.Task.WriteTimeout,
 		IdleTimeout:  cfg.Task.IdleTimeout,
