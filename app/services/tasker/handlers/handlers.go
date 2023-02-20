@@ -14,9 +14,10 @@ import (
 	"net/http/pprof"
 	"os"
 
-	"github.com/dimfeld/httptreemux/v5"
 	"github.com/jnkroeker/khyme/app/services/tasker/handlers/debug/check"
 	"github.com/jnkroeker/khyme/app/services/tasker/handlers/v1/test"
+	"github.com/jnkroeker/khyme/business/web/mid"
+	"github.com/jnkroeker/khyme/foundation/web"
 	"go.uber.org/zap"
 )
 
@@ -60,15 +61,26 @@ type APIMuxConfig struct {
 	Log      *zap.SugaredLogger
 }
 
-// constructs an http.Handler with all application routes defined
-func APIMux(cfg APIMuxConfig) *httptreemux.ContextMux {
-	mux := httptreemux.NewContextMux()
+// construct a new App (foundational) that embeds a mux
+// and provides an http.Handler wrapper method called Handle
+// with all application routes defined
+func APIMux(cfg APIMuxConfig) *web.App {
+	app := web.NewApp(
+		cfg.Shutdown,
+		mid.Logger(cfg.Log),
+		mid.Errors(cfg.Log),
+		mid.Metrics(),
+		mid.Panics(),
+	)
 
 	test_handlers := test.Handlers{
 		Log: cfg.Log,
 	}
 
-	mux.Handle(http.MethodGet, "/test", test_handlers.Test)
+	// This Handle function overrides the App type's embedded mux
+	// Handle() (which takes an http.Handler as the last parameter)
+	// to accept our custom Handler func type (from foundation/web)
+	app.Handle(http.MethodGet, "v1", "/test", test_handlers.Test)
 
-	return mux
+	return app
 }
