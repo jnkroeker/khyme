@@ -55,7 +55,7 @@ func (a *App) Handle(method string, group string, path string, handler Handler, 
 
 		ctx = context.WithValue(ctx, key, &v)
 
-		// If an error gets all the way up here
+		// If an error gets here, past the error handler to the outer layer of the onion
 		// life is really bad, so shutdown
 		if err := handler(ctx, w, r); err != nil {
 			a.SignalShutdown()

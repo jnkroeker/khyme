@@ -5,8 +5,10 @@ import (
 	"errors"
 )
 
+// naming convention for error variables is starting with ERR
 var ErrInvalidID = errors.New("ID is not in the correct form")
 
+// specific to errors encountered with web requests
 type ErrorResponse struct {
 	Error  string `json:"error"`
 	Fields string `json:"fields,omitempty"`
@@ -22,6 +24,7 @@ func NewRequestError(err error, status int) error {
 	return &RequestError{err, status, nil}
 }
 
+// pointer semantics for plain error interface return
 func (err *RequestError) Error() string {
 	return err.Err.Error()
 }
@@ -33,6 +36,7 @@ type FieldError struct {
 
 type FieldErrors []FieldError
 
+// any time we use slices, we use value semantics
 func (fe FieldErrors) Error() string {
 	d, err := json.Marshal(fe)
 	if err != nil {

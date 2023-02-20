@@ -2,11 +2,9 @@ package test
 
 import (
 	"context"
-	"errors"
 	"math/rand"
 	"net/http"
 
-	"github.com/jnkroeker/khyme/business/sys/validate"
 	"github.com/jnkroeker/khyme/foundation/web"
 	"go.uber.org/zap"
 )
@@ -25,9 +23,12 @@ type Handlers struct {
 // it wont be passed down thru the call stack.
 func (h Handlers) Test(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
 
-	// test shutdown error handling
 	if n := rand.Intn(100); n%2 == 0 {
-		return validate.NewRequestError(errors.New("trusted error"), http.StatusBadRequest)
+		// test shutdown error handling
+		// return validate.NewRequestError(errors.New("trusted error"), http.StatusBadRequest)
+
+		// test error and metrics still called when panic
+		panic("testing panic")
 	}
 
 	// the ok response is specific to each handler

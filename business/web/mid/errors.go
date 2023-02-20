@@ -22,7 +22,11 @@ func Errors(log *zap.SugaredLogger) web.Middleware {
 
 				var er validate.ErrorResponse
 				var status int
+
+				// what root error type did we get back?
+				// form an ErrorResponse and status depending on error type
 				switch act := validate.Cause(err).(type) {
+				// data model validation failed
 				case validate.FieldErrors:
 					er = validate.ErrorResponse{
 						Error:  "data validation error",
@@ -35,6 +39,7 @@ func Errors(log *zap.SugaredLogger) web.Middleware {
 					}
 					status = act.Status
 				default:
+					// untrusted error, return 500
 					er = validate.ErrorResponse{
 						Error: http.StatusText(http.StatusInternalServerError),
 					}

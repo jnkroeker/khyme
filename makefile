@@ -8,7 +8,7 @@ run-worker:
 # ======================================================================
 # Building containers
 
-TASKER_VERSION := 0.1.5 
+TASKER_VERSION := 0.1.6 
 
 WORKER_VERSION := 0.1.2
 
