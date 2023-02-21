@@ -14,6 +14,7 @@ import (
 	"net/http/pprof"
 	"os"
 
+	"github.com/jmoiron/sqlx"
 	"github.com/jnkroeker/khyme/app/services/tasker/handlers/debug/check"
 	"github.com/jnkroeker/khyme/app/services/tasker/handlers/v1/test"
 	"github.com/jnkroeker/khyme/business/web/mid"
@@ -41,13 +42,14 @@ func DebugStandardLibraryMux() *http.ServeMux {
 }
 
 // extend DebugStandardLibraryMux by adding our own endpoints
-func DebugMux(build string, log *zap.SugaredLogger) http.Handler {
+func DebugMux(build string, log *zap.SugaredLogger, db *sqlx.DB) http.Handler {
 	mux := DebugStandardLibraryMux()
 
 	// Register debug endpoints
 	check_handlers := check.Handlers{
 		Build: build,
 		Log:   log,
+		DB:    db,
 	}
 	mux.HandleFunc("/debug/readiness", check_handlers.Readiness)
 	mux.HandleFunc("/debug/liveness", check_handlers.Liveness)
@@ -59,6 +61,7 @@ func DebugMux(build string, log *zap.SugaredLogger) http.Handler {
 type APIMuxConfig struct {
 	Shutdown chan os.Signal
 	Log      *zap.SugaredLogger
+	DB       *sqlx.DB
 }
 
 // construct a new App (foundational) that embeds a mux

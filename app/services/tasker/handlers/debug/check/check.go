@@ -1,27 +1,40 @@
 package check
 
 import (
+	"context"
 	"encoding/json"
 	"net/http"
 	"os"
+	"time"
 
+	"github.com/jmoiron/sqlx"
+	"github.com/jnkroeker/khyme/business/sys/database"
 	"go.uber.org/zap"
 )
 
 type Handlers struct {
 	Build string
 	Log   *zap.SugaredLogger
+	DB    *sqlx.DB
 }
 
 // are services ready to accept traffic?
 func (h Handlers) Readiness(w http.ResponseWriter, r *http.Request) {
+	ctx, cancel := context.WithTimeout(r.Context(), time.Second*5)
+	defer cancel()
+
+	status := "OK"
+	statusCode := http.StatusOK
+	if err := database.StatusCheck(ctx, h.DB, h.Log); err != nil {
+		status = "db not ready"
+		statusCode = http.StatusInternalServerError
+	}
+
 	data := struct {
 		Status string `json:"status"`
 	}{
-		Status: "OK",
+		Status: status,
 	}
-
-	statusCode := http.StatusOK
 
 	// response is a method in this file, but not attached to Handlers, that
 	// prepares the response to the user

@@ -6,9 +6,16 @@ run-worker:
 	go run app/services/worker/main.go --help | go run app/tooling/logfmt/main.go
 
 # ======================================================================
+# Testing running systems
+
+# Database access
+# kubectl port-forward <pod name> 5432:5432 --namespace=database-system
+# dblab --host 0.0.0.0 --user postgres --db postgres --pass postgres --ssl disable --port 5432 --driver postgres
+
+# ======================================================================
 # Building containers
 
-TASKER_VERSION := 0.1.6 
+TASKER_VERSION := 0.1.10
 
 WORKER_VERSION := 0.1.2
 
@@ -46,6 +53,9 @@ k8s-tasker-apply:
 
 k8s-worker-apply:
 	kustomize build zarf/k8s/cluster/worker-pod | kubectl apply -f -
+
+k8s-database-apply:
+	kustomize build zarf/k8s/base/database-pod | kubectl apply -f -
 
 k8s-tasker-logs:
 	kubectl logs -l app=tasker --namespace=khyme-system --all-containers=true -f --tail=100 | go run app/tooling/logfmt/main.go

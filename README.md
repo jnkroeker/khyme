@@ -1,7 +1,7 @@
 # khyme
 Chyme ETL refactored into services for running Kubernetes
 
-## Build a new image and redeploy after a bug fix or new feature
+## Build a new service image and redeploy after a bug fix or new feature
 
     * update the service version in makefile
     * run `make <service name>` to generate a new image
@@ -10,9 +10,14 @@ Chyme ETL refactored into services for running Kubernetes
     * delete existing deployment (if there is one)
     * run `make k8s-<service>-apply` to start a new deployment with the updated image
 
+## Deploy PostgreSQL database to Khyme cluster
+
+    * run `make k8s-database-apply` to start new deployment in separate namespace to Tasker and Worker
+    * use dblab (github.com/danvergara/dblab) to establish connection to postgresql database (see Makefile)
+
 ## Use kubectl port-forwarding to access cluster from local machine
 
-    `kubectl port-forward <pod name> <local port>:<service port>` (add --namespace=khyme-system if namespace not configured)
+    `kubectl port-forward <pod name> <local port>:<service port>` (add --namespace=<namespace> if namespace not configured)
 
 # Changelog
 

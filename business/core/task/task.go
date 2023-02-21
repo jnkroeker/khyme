@@ -28,7 +28,7 @@ func (c Core) Create(ctx context.Context, url url.URL, now time.Time) (task.Task
 	// PERFORM PRE BUSINESS OPERATIONS
 
 	// create the task based on the user input
-	newTask, err := service.CreateTask(url)
+	newTask := CreateTask(url)
 
 	res, err := c.task.Create(ctx, newTask, now)
 
