@@ -5,6 +5,9 @@ run-tasker:
 run-worker:
 	go run app/services/worker/main.go --help | go run app/tooling/logfmt/main.go
 
+run-admin:
+	go run app/tooling/khyme-admin/main.go
+
 # ======================================================================
 # Testing running systems
 
@@ -15,7 +18,7 @@ run-worker:
 # ======================================================================
 # Building containers
 
-TASKER_VERSION := 0.1.10
+TASKER_VERSION := 0.1.13
 
 WORKER_VERSION := 0.1.2
 

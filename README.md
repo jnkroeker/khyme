@@ -19,6 +19,21 @@ Chyme ETL refactored into services for running Kubernetes
 
     `kubectl port-forward <pod name> <local port>:<service port>` (add --namespace=<namespace> if namespace not configured)
 
+## Seed Database with Test Data and Perform Test Queries
+
+    * Three pods: Tasker, Worker and Database must be up on k8s cluster
+    * Connections from local machine to Tasker and Database must be opened with below commands
+
+        `kubectl port-forward <database pod name> 5432:5432 --namespace=database-system`
+        `kubectl port-forward <tasker pod name> 3000:3000 --namespace=khyme-system`
+    
+    * Seed the database with `make khyme-admin` command
+    * execute curl requests from terminal to test Create, Read, Destroy endpoints
+
+        GET:  `curl http://localhost:3000/v1/tasks/1/1`
+        POST: `curl http://localhost:3000/v1/tasks`
+        DEL:  `curl http://localhost:3000/v1/tasks/
+
 # Changelog
 
 01-09-2023
@@ -40,4 +55,14 @@ Chyme ETL refactored into services for running Kubernetes
 02-03-2023
 
     Tasker and Worker services v1 running in separate pods within same namespace on k8s cluster
+
+02-22-2023
+
+    Tasker readiness debug endpoint has been commented out because the database readiness check is failing,
+        although I can connect to the database using dblab commands in Makefile and successfully create tables using
+        `make khyme-admin` command.
+
+    Existing architecture: 
+        Tasker creates Tasks and places them in postgres table 'tasks'
+
 
