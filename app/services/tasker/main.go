@@ -17,6 +17,7 @@ import (
 
 	"github.com/ardanlabs/conf"
 	"github.com/jnkroeker/khyme/app/services/tasker/handlers"
+	"github.com/jnkroeker/khyme/business/sys/database"
 	"github.com/joho/godotenv"
 	"go.uber.org/automaxprocs/maxprocs"
 	"go.uber.org/zap"
@@ -85,6 +86,15 @@ func run(log *zap.SugaredLogger) error {
 			Dlq             string        `conf:"default:DLQ"`
 			BatchSize       int           `conf:"default:0"`
 		}
+		DB struct {
+			User         string `conf:"default:postgres"`
+			Password     string `conf:"default:postgres, mask"`
+			Host         string `conf:"default:database-service.database-system"` // pod-to-pod comms with service name
+			Name         string `conf:"default:postgres"`
+			MaxIdleConns int    `conf:"default:0"`
+			MaxOpenConns int    `conf:"default:0"`
+			DisableTLS   bool   `conf:"default:true"`
+		}
 	}{
 		Version: conf.Version{
 			SVN:  build,
@@ -130,6 +140,30 @@ func run(log *zap.SugaredLogger) error {
 	log.Infow("startup", "config", out)
 
 	// ========================================================================================
+	// Database Support
+
+	// Create connectivity to the database.
+	log.Infow("startup", "status", "initializing database support", "host", cfg.DB.Host)
+
+	db, err := database.Open(database.Config{
+		User:         cfg.DB.User,
+		Password:     cfg.DB.Password,
+		Host:         cfg.DB.Host,
+		Name:         cfg.DB.Name,
+		MaxIdleConns: cfg.DB.MaxIdleConns,
+		MaxOpenConns: cfg.DB.MaxOpenConns,
+		DisableTLS:   cfg.DB.DisableTLS,
+	})
+	if err != nil {
+		log.Infow("startup", "status", "database initialization failed", "host", cfg.DB.Host)
+		return fmt.Errorf("connecting to db: %w", err)
+	}
+	defer func() {
+		log.Infow("shutdown", "status", "stopping database support", "host", cfg.DB.Host)
+		db.Close()
+	}()
+
+	// ========================================================================================
 	// Start Debug Service
 
 	log.Infow("startup", "status", "debug router started", "host", cfg.Task.DebugHost)
@@ -138,7 +172,7 @@ func run(log *zap.SugaredLogger) error {
 	// related endpoints. this includes the standard library endpoints and our own.
 
 	// Construct the mux for debugging
-	debugMux := handlers.DebugMux(build, log)
+	debugMux := handlers.DebugMux(build, log, db)
 
 	// Start the service listening for debug requests
 	// Not concerned about shutting this down with load shedding
@@ -162,6 +196,7 @@ func run(log *zap.SugaredLogger) error {
 	apiMux := handlers.APIMux(handlers.APIMuxConfig{
 		Shutdown: shutdown,
 		Log:      log,
+		DB:       db,
 	})
 
 	// In order to implement load-shedding, (aka on shutdown the goroutines currently handling requests can complete)

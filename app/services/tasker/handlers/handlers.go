@@ -14,8 +14,11 @@ import (
 	"net/http/pprof"
 	"os"
 
+	"github.com/jmoiron/sqlx"
 	"github.com/jnkroeker/khyme/app/services/tasker/handlers/debug/check"
+	"github.com/jnkroeker/khyme/app/services/tasker/handlers/v1/task"
 	"github.com/jnkroeker/khyme/app/services/tasker/handlers/v1/test"
+	taskCore "github.com/jnkroeker/khyme/business/core/task"
 	"github.com/jnkroeker/khyme/business/web/mid"
 	"github.com/jnkroeker/khyme/foundation/web"
 	"go.uber.org/zap"
@@ -41,13 +44,14 @@ func DebugStandardLibraryMux() *http.ServeMux {
 }
 
 // extend DebugStandardLibraryMux by adding our own endpoints
-func DebugMux(build string, log *zap.SugaredLogger) http.Handler {
+func DebugMux(build string, log *zap.SugaredLogger, db *sqlx.DB) http.Handler {
 	mux := DebugStandardLibraryMux()
 
 	// Register debug endpoints
 	check_handlers := check.Handlers{
 		Build: build,
 		Log:   log,
+		DB:    db,
 	}
 	mux.HandleFunc("/debug/readiness", check_handlers.Readiness)
 	mux.HandleFunc("/debug/liveness", check_handlers.Liveness)
@@ -59,12 +63,15 @@ func DebugMux(build string, log *zap.SugaredLogger) http.Handler {
 type APIMuxConfig struct {
 	Shutdown chan os.Signal
 	Log      *zap.SugaredLogger
+	DB       *sqlx.DB
 }
 
 // construct a new App (foundational) that embeds a mux
 // and provides an http.Handler wrapper method called Handle
 // with all application routes defined
 func APIMux(cfg APIMuxConfig) *web.App {
+	const version = "v1"
+
 	app := web.NewApp(
 		cfg.Shutdown,
 		mid.Logger(cfg.Log),
@@ -81,6 +88,14 @@ func APIMux(cfg APIMuxConfig) *web.App {
 	// Handle() (which takes an http.Handler as the last parameter)
 	// to accept our custom Handler func type (from foundation/web)
 	app.Handle(http.MethodGet, "v1", "/test", test_handlers.Test)
+
+	task_handlers := task.Handlers{
+		Task: taskCore.NewCore(cfg.Log, cfg.DB),
+	}
+
+	app.Handle(http.MethodGet, version, "/tasks/:page/:rows", task_handlers.Query)
+	app.Handle(http.MethodPost, version, "/tasks", task_handlers.Create)
+	app.Handle(http.MethodDelete, version, "/tasks/:id", task_handlers.Delete)
 
 	return app
 }
