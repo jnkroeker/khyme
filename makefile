@@ -18,7 +18,7 @@ run-admin:
 # ======================================================================
 # Building containers
 
-TASKER_VERSION := 0.1.13
+TASKER_VERSION := 0.2.2
 
 WORKER_VERSION := 0.1.2
 

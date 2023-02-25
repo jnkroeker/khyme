@@ -3,7 +3,6 @@ package task
 import (
 	"context"
 	"fmt"
-	"net/url"
 	"time"
 
 	"github.com/jmoiron/sqlx"
@@ -23,7 +22,7 @@ func NewCore(log *zap.SugaredLogger, db *sqlx.DB) Core {
 	}
 }
 
-func (c Core) Create(ctx context.Context, url url.URL, now time.Time) (task.Task, error) {
+func (c Core) Create(ctx context.Context, url string, now time.Time) (task.Task, error) {
 
 	// PERFORM PRE BUSINESS OPERATIONS
 

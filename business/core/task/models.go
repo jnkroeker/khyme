@@ -46,8 +46,8 @@ var Mp4 = &Template{
 		outUrl.Host = os.Getenv("CH_TEMPLATE_MP4_MIRROR_BUCKET")
 
 		return &task.Task{
-			InputResource:  resource,
-			OutputResource: outUrl,
+			InputResource:  resource.String(),
+			OutputResource: outUrl.String(),
 			Hooks:          "mp4",
 			ExecutionImage: "jnkroeker/mp4_processor:0.1.4",
 			Timeout:        time.Duration(48) * time.Hour,

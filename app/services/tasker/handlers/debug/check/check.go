@@ -1,11 +1,14 @@
 package check
 
 import (
+	"context"
 	"encoding/json"
 	"net/http"
 	"os"
+	"time"
 
 	"github.com/jmoiron/sqlx"
+	"github.com/jnkroeker/khyme/business/sys/database"
 	"go.uber.org/zap"
 )
 
@@ -16,22 +19,16 @@ type Handlers struct {
 }
 
 // are services ready to accept traffic?
-/*
- * TODO: database.StatusCheck fails but db is accessible from dblab
- * 		 02-22-23 -> thought it had to do with timeout added to context
- *					 because logs contain err message from database/database.go:81,
- 					 "msg":"Database status check timeout"
-*/
 func (h Handlers) Readiness(w http.ResponseWriter, r *http.Request) {
-	// ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
-	// defer cancel()
+	ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
+	defer cancel()
 
 	status := "OK"
 	statusCode := http.StatusOK
-	// if err := database.StatusCheck(ctx, h.DB, h.Log); err != nil {
-	// 	status = "db not ready"
-	// 	statusCode = http.StatusInternalServerError
-	// }
+	if err := database.StatusCheck(ctx, h.DB); err != nil {
+		status = "db not ready"
+		statusCode = http.StatusInternalServerError
+	}
 
 	data := struct {
 		Status string `json:"status"`

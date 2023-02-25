@@ -1,7 +1,6 @@
 package task
 
 import (
-	"net/url"
 	"time"
 )
 
@@ -10,8 +9,8 @@ type Task struct {
 	ID             string        `db:"task_id" json:"id"`
 	DateCreated    time.Time     `db:"date_created" json:"date_created"`
 	Version        string        `db:"version" json:"version"`
-	InputResource  url.URL       `db:"input_url" json:"input_url"`
-	OutputResource url.URL       `db:"output_url" json:"output_url"`
+	InputResource  string        `db:"input_url" json:"input_url"`
+	OutputResource string        `db:"output_url" json:"output_url"`
 	Hooks          string        `db:"hooks" json:"hooks"`
 	ExecutionImage string        `db:"exec_image" json:"exec_image"`
 	Timeout        time.Duration `db:"timeout" json:"timeout"`
@@ -25,8 +24,8 @@ type Task struct {
  */
 type NewTask struct {
 	Version        string        `db:"version" json:"version"`
-	InputResource  url.URL       `db:"input_url" json:"input_url"`
-	OutputResource url.URL       `db:"output_url" json:"output_url"`
+	InputResource  string        `db:"input_url" json:"input_url"`
+	OutputResource string        `db:"output_url" json:"output_url"`
 	Hooks          string        `db:"hooks" json:"hooks"`
 	ExecutionImage string        `db:"exec_image" json:"exec_image"`
 	Timeout        time.Duration `db:"timeout" json:"timeout"`

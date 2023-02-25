@@ -89,7 +89,7 @@ func run(log *zap.SugaredLogger) error {
 		DB struct {
 			User         string `conf:"default:postgres"`
 			Password     string `conf:"default:postgres, mask"`
-			Host         string `conf:"default:localhost"`
+			Host         string `conf:"default:database-service.database-system"` // pod-to-pod comms with service name
 			Name         string `conf:"default:postgres"`
 			MaxIdleConns int    `conf:"default:0"`
 			MaxOpenConns int    `conf:"default:0"`
@@ -196,6 +196,7 @@ func run(log *zap.SugaredLogger) error {
 	apiMux := handlers.APIMux(handlers.APIMuxConfig{
 		Shutdown: shutdown,
 		Log:      log,
+		DB:       db,
 	})
 
 	// In order to implement load-shedding, (aka on shutdown the goroutines currently handling requests can complete)

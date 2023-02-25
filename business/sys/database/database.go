@@ -67,7 +67,7 @@ func Open(cfg Config) (*sqlx.DB, error) {
 
 // StatusCheck returns nil if it can successfully talk to the database.
 // It returns a non-nil response if it can't talk to the database.
-func StatusCheck(ctx context.Context, db *sqlx.DB, log *zap.SugaredLogger) error {
+func StatusCheck(ctx context.Context, db *sqlx.DB) error {
 
 	// First, check if we can ping the database
 	var pingError error
@@ -78,14 +78,12 @@ func StatusCheck(ctx context.Context, db *sqlx.DB, log *zap.SugaredLogger) error
 		}
 		time.Sleep(time.Duration(attempts) * 100 * time.Millisecond)
 		if ctx.Err() != nil {
-			log.Infow("Database status check timeout", "traceid", web.GetTraceId(ctx))
 			return ctx.Err()
 		}
 	}
 
 	// Make sure we didn't timeout or get canceled
 	if ctx.Err() != nil {
-		log.Infow("Database status check timeout or cancel", "traceid", web.GetTraceId(ctx))
 		return ctx.Err()
 	}
 
@@ -96,11 +94,11 @@ func StatusCheck(ctx context.Context, db *sqlx.DB, log *zap.SugaredLogger) error
 }
 
 // NamedExecContext is a helper function to execute a CRUD operation
-func NamedExecContext(ctx context.Context, log *zap.SugaredLogger, db *sqlx.DB, query string, data interface{}) error {
+func NamedExecContext(ctx context.Context, log *zap.SugaredLogger, db sqlx.ExtContext, query string, data interface{}) error {
 	q := queryString(query, data)
 	log.Infow("database.NamedExecContext", "traceid", web.GetTraceId(ctx), "query", q)
 
-	if _, err := db.NamedExecContext(ctx, query, data); err != nil {
+	if _, err := sqlx.NamedExecContext(ctx, db, query, data); err != nil {
 		return err
 	}
 
@@ -108,7 +106,7 @@ func NamedExecContext(ctx context.Context, log *zap.SugaredLogger, db *sqlx.DB, 
 }
 
 // NamedQuerySlice is a helper for queries that return a collection of data to be unmarshalled into a slice
-func NamedQuerySlice(ctx context.Context, log *zap.SugaredLogger, db *sqlx.DB, query string, data interface{}, dest interface{}) error {
+func NamedQuerySlice(ctx context.Context, log *zap.SugaredLogger, db sqlx.ExtContext, query string, data interface{}, dest interface{}) error {
 	q := queryString(query, data)
 	log.Infow("database.NamedQuerySlice", "traceid", web.GetTraceId(ctx), "query", q)
 
@@ -119,7 +117,7 @@ func NamedQuerySlice(ctx context.Context, log *zap.SugaredLogger, db *sqlx.DB, q
 		return errors.New("must provide a pointer to a slice")
 	}
 
-	rows, err := db.NamedQueryContext(ctx, query, data)
+	rows, err := sqlx.NamedQueryContext(ctx, db, query, data)
 	if err != nil {
 		return err
 	}

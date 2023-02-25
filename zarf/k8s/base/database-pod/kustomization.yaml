@@ -3,4 +3,3 @@ kind: Kustomization
 resources:
   - ./database-config.yaml
   - ./base-database.yaml
-  

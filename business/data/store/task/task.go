@@ -14,7 +14,7 @@ import (
 // Store manages the set of APIs for Task access
 type Store struct {
 	log *zap.SugaredLogger
-	db  *sqlx.DB
+	db  sqlx.ExtContext
 }
 
 func NewStore(log *zap.SugaredLogger, db *sqlx.DB) Store {
@@ -26,14 +26,20 @@ func NewStore(log *zap.SugaredLogger, db *sqlx.DB) Store {
 
 func (s Store) Create(ctx context.Context, nt NewTask, now time.Time) (Task, error) {
 	task := Task{
-		ID:          validate.GenerateID(),
-		DateCreated: now,
+		ID:             validate.GenerateID(),
+		DateCreated:    now,
+		Version:        nt.Version,
+		InputResource:  nt.InputResource,
+		OutputResource: nt.OutputResource,
+		Hooks:          nt.Hooks,
+		ExecutionImage: nt.ExecutionImage,
+		Timeout:        nt.Timeout,
 	}
 
 	const q = `INSERT INTO tasks
-						(task_id, date_created)
+						(task_id, date_created, version, input_url, output_url, hooks, exec_image, timeout)
 				VALUES
-						(:task_id, :date_created)`
+						(:task_id, :date_created, :version, :input_url, :output_url, :hooks, :exec_image, :timeout)`
 
 	if err := database.NamedExecContext(ctx, s.log, s.db, q, task); err != nil {
 		return Task{}, fmt.Errorf("inserting task: %w", err)

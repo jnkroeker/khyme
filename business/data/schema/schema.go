@@ -7,6 +7,7 @@ import (
 
 	"github.com/ardanlabs/darwin"
 	"github.com/jmoiron/sqlx"
+	"github.com/jnkroeker/khyme/business/sys/database"
 )
 
 // tell compiler at build time to read the files and place content in these variables
@@ -23,14 +24,11 @@ var (
 )
 
 // Migrate attempts to bring the schema
-/*
- * TODO: re-incorporate database.StatusCheck when you can figure out why
- *       Readiness debug probe is failing
- */
+
 func Migrate(ctx context.Context, db *sqlx.DB) error {
-	// if err := database.StatusCheck(ctx, db); err != nil {
-	// 	return fmt.Errorf("status check database: %w", err)
-	// }
+	if err := database.StatusCheck(ctx, db); err != nil {
+		return fmt.Errorf("status check database: %w", err)
+	}
 
 	driver, err := darwin.NewGenericDriver(db.DB, darwin.PostgresDialect{})
 	if err != nil {
@@ -43,14 +41,10 @@ func Migrate(ctx context.Context, db *sqlx.DB) error {
 
 // Seed runs the set of seed-data queries against db. The queries are run in a
 // transaction and rolled back if any fail.
-/*
- * TODO: re-incorporate database.StatusCheck when you can figure out why
- *       Readiness debug probe is failing
- */
 func Seed(ctx context.Context, db *sqlx.DB) error {
-	// if err := database.StatusCheck(ctx, db); err != nil {
-	// 	return fmt.Errorf("status check database: %w", err)
-	// }
+	if err := database.StatusCheck(ctx, db); err != nil {
+		return fmt.Errorf("status check database: %w", err)
+	}
 
 	tx, err := db.Begin()
 	if err != nil {

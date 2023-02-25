@@ -31,8 +31,8 @@ Chyme ETL refactored into services for running Kubernetes
     * execute curl requests from terminal to test Create, Read, Destroy endpoints
 
         GET:  `curl http://localhost:3000/v1/tasks/1/1`
-        POST: `curl http://localhost:3000/v1/tasks`
-        DEL:  `curl http://localhost:3000/v1/tasks/
+        POST: `curl http://localhost:3000/v1/tasks -H "Content-Type: text/plain" -d '"<url text string>"'`
+        DEL:  `curl http://localhost:3000/v1/tasks/<task id>`
 
 # Changelog
 
@@ -56,11 +56,10 @@ Chyme ETL refactored into services for running Kubernetes
 
     Tasker and Worker services v1 running in separate pods within same namespace on k8s cluster
 
-02-22-2023
+02-24-2023
 
-    Tasker readiness debug endpoint has been commented out because the database readiness check is failing,
-        although I can connect to the database using dblab commands in Makefile and successfully create tables using
-        `make khyme-admin` command.
+    Tasker readiness debug endpoint works. Tasker accepts GET, POST, DELETE http requests so long as kubectl port forwarding
+        to 3000 is open. 
 
     Existing architecture: 
         Tasker creates Tasks and places them in postgres table 'tasks'

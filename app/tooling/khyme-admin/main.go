@@ -11,7 +11,7 @@ import (
 )
 
 func main() {
-	err := dropTables()
+	err := migrate() // dropTables() when you need to reset the schema
 
 	if err != nil {
 		fmt.Println(err)
