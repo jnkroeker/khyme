@@ -4,6 +4,7 @@ go 1.17
 
 require (
 	github.com/ardanlabs/conf v1.5.0
+	github.com/ardanlabs/conf/v3 v3.1.4
 	github.com/ardanlabs/darwin v1.5.0
 	github.com/dimfeld/httptreemux/v5 v5.5.0
 	github.com/go-playground/validator/v10 v10.11.2

@@ -64,4 +64,29 @@ Chyme ETL refactored into services for running Kubernetes
     Existing architecture: 
         Tasker creates Tasks and places them in postgres table 'tasks'
 
+02-28-2023
+
+    Working on establishing Vault to hold credentials to place and access videos in GCP. Spending time trying to understand the 
+        relationship between several Kubernetes objects: StatefulSet, PersistentVolumeClaim, PersistentVolume and StorageClass.
+    
+    It appears that a StatefulSet can dynamically make a PersistentVolume for a PersistentVolumeClaim if the PVC specifies a
+        StorageClass to use and that SC exists. 
+    
+    However, PersistentVolumes can only be provisioned dynamically (as opposed to statically; i.e. coded in yaml) if the
+        DefaultStorageClass is enabled on the API server.
+
+    This is NOT how ArdanLabs Service appears to be doing it however.
+
+    * TODO #1 : EXPERIMENT WITH ARDAN LABS APPROACH TO PV/PVC AND THE ABOVE METHOD OF VAULT CONFIGURATION
+
+    The ArdanLabs Service project has a Worker package ( in /foundation/worker ) that appears to utilize goroutines and k8s
+        Jobs to execute tasks in a manner similar to how we want to execute work in Khyme's Worker service.
+
+    * TODO #2 : UNDERSTAND HOW ARDAN LABS WORKER PACKAGE JOB EXECUTION CAN HELP WITH KHYME TASKS. DOES/CAN IT USE K8S JOBS? 
+
+    The Postgres database should really be a StatefulSet rather than just a deployment
+
+    * TODO #3 : CONVERT POSTGRES DATABASE TO A STATEFUL SET
+
+
 

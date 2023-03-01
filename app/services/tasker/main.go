@@ -86,6 +86,11 @@ func run(log *zap.SugaredLogger) error {
 			Dlq             string        `conf:"default:DLQ"`
 			BatchSize       int           `conf:"default:0"`
 		}
+		Vault struct {
+			Address   string `conf:"default:vault.khyme-system"`
+			MountPath string `conf:"default:secret"`
+			Token     string `conf:"default:mytoken,mask"`
+		}
 		DB struct {
 			User         string `conf:"default:postgres"`
 			Password     string `conf:"default:postgres, mask"`
@@ -162,6 +167,31 @@ func run(log *zap.SugaredLogger) error {
 		log.Infow("shutdown", "status", "stopping database support", "host", cfg.DB.Host)
 		db.Close()
 	}()
+
+	// ========================================================================================
+	// Authentication Support
+
+	log.Infow("startup", "status", "initializing authentication support")
+
+	// vault, err := vault.New(vault.Config{
+	// 	Address:   cfg.Vault.Address,
+	// 	Token:     cfg.Vault.Token,
+	// 	MountPath: cfg.Vault.MountPath,
+	// })
+	// if err != nil {
+	// 	return fmt.Errorf("constructing vault: %w", err)
+	// }
+
+	// authCfg := auth.Config{
+	// 	Log:       log,
+	// 	DB:        db,
+	// 	KeyLookup: vault,
+	// }
+
+	// auth, err := auth.New(authCfg)
+	// if err != nil {
+	// 	return fmt.Errorf("constructing auth: %w", err)
+	// }
 
 	// ========================================================================================
 	// Start Debug Service
