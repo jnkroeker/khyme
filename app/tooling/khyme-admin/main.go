@@ -1,104 +1,126 @@
 package main
 
 import (
-	"context"
+	"errors"
 	"fmt"
 	"os"
-	"time"
 
-	"github.com/jnkroeker/khyme/business/data/schema"
+	"github.com/ardanlabs/conf/v3"
+	"github.com/jnkroeker/khyme/app/tooling/khyme-admin/commands"
 	"github.com/jnkroeker/khyme/business/sys/database"
+	"github.com/jnkroeker/khyme/foundation/vault"
+	"go.uber.org/zap"
 )
 
-func main() {
-	err := migrate() // dropTables() when you need to reset the schema
+var build = "develop"
 
-	if err != nil {
-		fmt.Println(err)
+type config struct {
+	conf.Version
+	Args conf.Args
+	DB   struct {
+		User         string `conf:"default:postgres"`
+		Password     string `conf:"default:postgres,mask"`
+		Host         string `conf:"default:database-service.database-system"`
+		Name         string `conf:"default:postgres"`
+		MaxIdleConns int    `conf:"default:2"`
+		MaxOpenConns int    `conf:"default:0"`
+		DisableTLS   bool   `conf:"default:true"`
+	}
+	Vault struct {
+		KeysFolder string `conf:"default:zarf/keys/"`
+		Address    string `conf:"default:http://vault.khyme-system:8200"`
+		Token      string `conf:"default:mytoken,mask"`
+		MountPath  string `conf:"default:secret"`
+	}
+}
+
+func main() {
+	if err := run(zap.NewNop().Sugar()); err != nil {
+		if errors.Is(err, commands.ErrHelp) {
+			fmt.Println("ERROR", err)
+		}
 		os.Exit(1)
 	}
 }
 
-func seed() error {
-	cfg := database.Config{
-		User:         "postgres",
-		Password:     "postgres",
-		Host:         "localhost",
-		Name:         "postgres",
-		MaxIdleConns: 0,
-		MaxOpenConns: 0,
-		DisableTLS:   true,
+func run(log *zap.SugaredLogger) error {
+	cfg := config{
+		Version: conf.Version{
+			Build: build,
+			Desc:  "copywright Hadeda, LLC",
+		},
 	}
 
-	db, err := database.Open(cfg)
+	const prefix = "KHYME"
+	help, err := conf.Parse(prefix, &cfg)
 	if err != nil {
-		return fmt.Errorf("connect database: %w", err)
+		if errors.Is(err, conf.ErrHelpWanted) {
+			fmt.Println(help)
+			return nil
+		}
+
+		out, err := conf.String(&cfg)
+		if err != nil {
+			return fmt.Errorf("generating config for output: %w", err)
+		}
+		log.Infow("startup", "config", out)
+
+		return fmt.Errorf("parsing config: %w", err)
 	}
-	defer db.Close()
 
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	defer cancel()
+	return processCommands(cfg.Args, log, cfg)
+}
 
-	if err := schema.Seed(ctx, db); err != nil {
-		return fmt.Errorf("seed database: %w", err)
+func processCommands(args conf.Args, log *zap.SugaredLogger, cfg config) error {
+	dbConfig := database.Config{
+		User:         cfg.DB.User,
+		Password:     cfg.DB.Password,
+		Host:         cfg.DB.Host,
+		Name:         cfg.DB.Name,
+		MaxIdleConns: cfg.DB.MaxIdleConns,
+		MaxOpenConns: cfg.DB.MaxOpenConns,
+		DisableTLS:   cfg.DB.DisableTLS,
 	}
 
-	fmt.Println("seed data complete")
+	vaultConfig := vault.Config{
+		Address:   cfg.Vault.Address,
+		Token:     cfg.Vault.Token,
+		MountPath: cfg.Vault.MountPath,
+	}
+
+	switch args.Num(0) {
+	case "migrate":
+		if err := commands.Migrate(dbConfig); err != nil {
+			return fmt.Errorf("migrating database: %w", err)
+		}
+	case "seed":
+		if err := commands.Seed(dbConfig); err != nil {
+			return fmt.Errorf("seeding database: %w", err)
+		}
+	case "drop":
+		if err := commands.DropTables(dbConfig); err != nil {
+			return fmt.Errorf("drop tables: %w", err)
+		}
+	case "vault":
+		if err := commands.Vault(vaultConfig); err != nil {
+			return fmt.Errorf("setting private key: %w", err)
+		}
+	case "vault-init":
+		if err := commands.VaultInit(vaultConfig); err != nil {
+			return fmt.Errorf("initializing vault instance: %w", err)
+		}
+	default:
+		fmt.Println("migrate:    create the schema in the database")
+		fmt.Println("seed:       add data to the database")
+		fmt.Println("useradd:    add a new user to the database")
+		fmt.Println("users:      get a list of users from the database")
+		fmt.Println("genkey:     generate a set of private/public key files")
+		fmt.Println("gentoken:   generate a JWT for a user with claims")
+		fmt.Println("vault:      load private keys into vault system")
+		fmt.Println("vault-init: initialize a new vault instance")
+		fmt.Println("provide a command to get more help.")
+		return commands.ErrHelp
+	}
 
 	return nil
-}
-
-func migrate() error {
-	cfg := database.Config{
-		User:         "postgres",
-		Password:     "postgres",
-		Host:         "localhost",
-		Name:         "postgres",
-		MaxIdleConns: 0,
-		MaxOpenConns: 0,
-		DisableTLS:   true,
-	}
-
-	db, err := database.Open(cfg)
-	if err != nil {
-		return fmt.Errorf("connect database: %w", err)
-	}
-	defer db.Close()
-
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	defer cancel()
-
-	if err := schema.Migrate(ctx, db); err != nil {
-		return fmt.Errorf("migrate database: %w", err)
-	}
-
-	fmt.Println("migrations complete")
-
-	return seed()
-}
-
-func dropTables() error {
-	cfg := database.Config{
-		User:         "postgres",
-		Password:     "postgres",
-		Host:         "localhost",
-		Name:         "postgres",
-		MaxIdleConns: 0,
-		MaxOpenConns: 0,
-		DisableTLS:   true,
-	}
-
-	db, err := database.Open(cfg)
-	if err != nil {
-		return fmt.Errorf("connect database: %w", err)
-	}
-	defer db.Close()
-
-	if err := schema.DeleteAll(db); err != nil {
-		return fmt.Errorf("migrate database: %w", err)
-	}
-
-	fmt.Println("drop tables complete")
-
-	return migrate()
 }

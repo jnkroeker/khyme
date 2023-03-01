@@ -15,7 +15,7 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/ardanlabs/conf"
+	"github.com/ardanlabs/conf/v3"
 	"github.com/jnkroeker/khyme/app/services/tasker/handlers"
 	"github.com/joho/godotenv"
 	"go.uber.org/automaxprocs/maxprocs"
@@ -72,8 +72,8 @@ func run(log *zap.SugaredLogger) error {
 		}
 	}{
 		Version: conf.Version{
-			SVN:  build,
-			Desc: "copywright of Hadeda, LLC",
+			Build: build,
+			Desc:  "copywright of Hadeda, LLC",
 		},
 	}
 
@@ -93,7 +93,7 @@ func run(log *zap.SugaredLogger) error {
 	const prefix = "WORKER"
 
 	// Parse environment variables from the commandline for variables starting with the prefix
-	help, err := conf.ParseOSArgs(prefix, &cfg)
+	help, err := conf.Parse(prefix, &cfg)
 	if err != nil {
 		if errors.Is(err, conf.ErrHelpWanted) {
 			fmt.Println(help)

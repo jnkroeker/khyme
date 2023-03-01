@@ -5,8 +5,11 @@ run-tasker:
 run-worker:
 	go run app/services/worker/main.go --help | go run app/tooling/logfmt/main.go
 
-run-admin:
-	go run app/tooling/khyme-admin/main.go
+seed:
+	go run app/tooling/khyme-admin/main.go seed
+
+vault-init:
+	go run app/tooling/khyme-admin/main.go vault-init
 
 # ======================================================================
 # Testing running systems
@@ -59,6 +62,9 @@ k8s-worker-apply:
 
 k8s-database-apply:
 	kustomize build zarf/k8s/base/database-pod | kubectl apply -f -
+
+k8s-vault-apply:
+	kustomize build zarf/k8s/base/vault-pod | kubectl apply -f -
 
 k8s-tasker-logs:
 	kubectl logs -l app=tasker --namespace=khyme-system --all-containers=true -f --tail=100 | go run app/tooling/logfmt/main.go
