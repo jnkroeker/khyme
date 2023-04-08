@@ -31,7 +31,7 @@ spec:
         # service definition 'tasker-service', below, actually exposes these ports
         ports:
         - name: tasker-api 
-          containerPort: 3000 
+          containerPort: 3000
         - name: tasker-debug 
           containerPort: 4000
         readinessProbe: # readiness probes mark the service as available for traffic
@@ -76,14 +76,17 @@ metadata:
   name: tasker-service 
   namespace: khyme-system
 spec:
-  type: ClusterIP
+  externalTrafficPolicy: Local
+  type: NodePort
   selector:
     app: tasker 
   ports:
   - name: tasker-api 
     port: 3000
     targetPort: tasker-api 
+    nodePort: 30080
   - name: tasker-debug 
     port: 4000 
     targetPort: tasker-debug
+    nodePort: 30082
         

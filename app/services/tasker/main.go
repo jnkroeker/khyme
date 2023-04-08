@@ -89,9 +89,9 @@ func run(log *zap.SugaredLogger) error {
 		DB struct {
 			User         string `conf:"default:postgres"`
 			Password     string `conf:"default:postgres, mask"`
-			Host         string `conf:"default:database-service.database-system"` // pod-to-pod comms with service name
+			Host         string `conf:"default:database-service.database-system.svc.cluster.local"` // pod-to-pod comms with service name
 			Name         string `conf:"default:postgres"`
-			MaxIdleConns int    `conf:"default:0"`
+			MaxIdleConns int    `conf:"default:2"`
 			MaxOpenConns int    `conf:"default:0"`
 			DisableTLS   bool   `conf:"default:true"`
 		}

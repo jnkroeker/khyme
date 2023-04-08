@@ -15,11 +15,7 @@ Chyme ETL refactored into services for running Kubernetes
     * run `make k8s-database-apply` to start new deployment in separate namespace to Tasker and Worker
     * use dblab (github.com/danvergara/dblab) to establish connection to postgresql database (see Makefile)
 
-## Use kubectl port-forwarding to access cluster from local machine
-
-    `kubectl port-forward <pod name> <local port>:<service port>` (add --namespace=<namespace> if namespace not configured)
-
-## Seed Database with Test Data and Perform Test Queries
+## Open port-forwarding, Seed Database with Test Data and Perform Test Queries
 
     * Three pods: Tasker, Worker and Database must be up on k8s cluster
     * Connections from local machine to Tasker and Database must be opened with below commands
@@ -27,7 +23,7 @@ Chyme ETL refactored into services for running Kubernetes
         `kubectl port-forward <database pod name> 5432:5432 --namespace=database-system`
         `kubectl port-forward <tasker pod name> 3000:3000 --namespace=khyme-system`
     
-    * Seed the database with `make khyme-admin` command
+    * Seed the database with `make run-admin` command
     * execute curl requests from terminal to test Create, Read, Destroy endpoints
 
         GET:  `curl http://localhost:3000/v1/tasks/1/1`
