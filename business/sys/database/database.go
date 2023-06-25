@@ -3,6 +3,7 @@ package database
 
 import (
 	"context"
+	"database/sql"
 	"errors"
 	"fmt"
 	"net/url"
@@ -10,10 +11,16 @@ import (
 	"strings"
 	"time"
 
+	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/jmoiron/sqlx"
 	"github.com/jnkroeker/khyme/foundation/web"
 	_ "github.com/lib/pq" // Calls this database driver's init function
 	"go.uber.org/zap"
+)
+
+const (
+	uniqueViolation = "23505"
+	undefinedTable  = "42P01"
 )
 
 // Set of error variables
@@ -21,6 +28,7 @@ var (
 	ErrNotFound              = errors.New("not found")
 	ErrInvalidID             = errors.New("ID is not in its proper form")
 	ErrAuthenticationFailure = errors.New("authentication failed")
+	ErrDBDuplicatedEntry     = errors.New("duplicated entry")
 	ErrForbidden             = errors.New("attempted action is not allowed")
 )
 
@@ -91,6 +99,41 @@ func StatusCheck(ctx context.Context, db *sqlx.DB) error {
 	const q = `SELECT true`
 	var tmp bool
 	return db.QueryRowContext(ctx, q).Scan(&tmp)
+}
+
+// WithinTran runs passed function and does commit/rollback at the end.
+func WithinTran(ctx context.Context, log *zap.SugaredLogger, db *sqlx.DB, fn func(*sqlx.Tx) error) error {
+	log.Info(ctx, "begin tran")
+	tx, err := db.Beginx()
+	if err != nil {
+		return fmt.Errorf("begin tran: %w", err)
+	}
+
+	// We can defer the rollback since the code checks if the transaction
+	// has already been committed.
+	defer func() {
+		if err := tx.Rollback(); err != nil {
+			if errors.Is(err, sql.ErrTxDone) {
+				return
+			}
+			log.Error(ctx, "unable to rollback tran", "msg", err)
+		}
+		log.Info(ctx, "rollback tran")
+	}()
+
+	if err := fn(tx); err != nil {
+		if pqerr, ok := err.(*pgconn.PgError); ok && pqerr.Code == uniqueViolation {
+			return ErrDBDuplicatedEntry
+		}
+		return fmt.Errorf("exec tran: %w", err)
+	}
+
+	if err := tx.Commit(); err != nil {
+		return fmt.Errorf("commit tran: %w", err)
+	}
+	log.Info(ctx, "commit tran")
+
+	return nil
 }
 
 // NamedExecContext is a helper function to execute a CRUD operation

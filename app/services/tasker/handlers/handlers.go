@@ -19,6 +19,7 @@ import (
 	"github.com/jnkroeker/khyme/app/services/tasker/handlers/v1/task"
 	"github.com/jnkroeker/khyme/app/services/tasker/handlers/v1/test"
 	taskCore "github.com/jnkroeker/khyme/business/core/task"
+	"github.com/jnkroeker/khyme/business/web/auth"
 	"github.com/jnkroeker/khyme/business/web/mid"
 	"github.com/jnkroeker/khyme/foundation/web"
 	"go.uber.org/zap"
@@ -63,6 +64,7 @@ func DebugMux(build string, log *zap.SugaredLogger, db *sqlx.DB) http.Handler {
 type APIMuxConfig struct {
 	Shutdown chan os.Signal
 	Log      *zap.SugaredLogger
+	Auth     *auth.Auth
 	DB       *sqlx.DB
 }
 

@@ -15,9 +15,11 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/ardanlabs/conf"
+	conf "github.com/ardanlabs/conf/v3"
 	"github.com/jnkroeker/khyme/app/services/tasker/handlers"
 	"github.com/jnkroeker/khyme/business/sys/database"
+	"github.com/jnkroeker/khyme/business/web/auth"
+	"github.com/jnkroeker/khyme/foundation/vault"
 	"github.com/joho/godotenv"
 	"go.uber.org/automaxprocs/maxprocs"
 	"go.uber.org/zap"
@@ -102,8 +104,8 @@ func run(log *zap.SugaredLogger) error {
 		}
 	}{
 		Version: conf.Version{
-			SVN:  build,
-			Desc: "copywright of Hadeda, LLC",
+			Build: build,
+			Desc:  "copywright of Hadeda, LLC",
 		},
 	}
 
@@ -123,7 +125,7 @@ func run(log *zap.SugaredLogger) error {
 	const prefix = "TASK"
 
 	// Parse environment variables from the commandline for variables starting with the prefix
-	help, err := conf.ParseOSArgs(prefix, &cfg)
+	help, err := conf.Parse(prefix, &cfg)
 	if err != nil {
 		if errors.Is(err, conf.ErrHelpWanted) {
 			fmt.Println(help)
@@ -173,25 +175,25 @@ func run(log *zap.SugaredLogger) error {
 
 	log.Infow("startup", "status", "initializing authentication support")
 
-	// vault, err := vault.New(vault.Config{
-	// 	Address:   cfg.Vault.Address,
-	// 	Token:     cfg.Vault.Token,
-	// 	MountPath: cfg.Vault.MountPath,
-	// })
-	// if err != nil {
-	// 	return fmt.Errorf("constructing vault: %w", err)
-	// }
+	vault, err := vault.New(vault.Config{
+		Address:   cfg.Vault.Address,
+		Token:     cfg.Vault.Token,
+		MountPath: cfg.Vault.MountPath,
+	})
+	if err != nil {
+		return fmt.Errorf("constructing vault: %w", err)
+	}
 
-	// authCfg := auth.Config{
-	// 	Log:       log,
-	// 	DB:        db,
-	// 	KeyLookup: vault,
-	// }
+	authCfg := auth.Config{
+		Log:       log,
+		DB:        db,
+		KeyLookup: vault,
+	}
 
-	// auth, err := auth.New(authCfg)
-	// if err != nil {
-	// 	return fmt.Errorf("constructing auth: %w", err)
-	// }
+	auth, err := auth.New(authCfg)
+	if err != nil {
+		return fmt.Errorf("constructing auth: %w", err)
+	}
 
 	// ========================================================================================
 	// Start Debug Service
@@ -226,6 +228,7 @@ func run(log *zap.SugaredLogger) error {
 	apiMux := handlers.APIMux(handlers.APIMuxConfig{
 		Shutdown: shutdown,
 		Log:      log,
+		Auth:     auth,
 		DB:       db,
 	})
 

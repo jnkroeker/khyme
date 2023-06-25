@@ -1,4 +1,53 @@
 
+# ======================================================================
+# Define dependencies
+
+GOLANG          := golang:1.20
+ALPINE          := alpine:3.18
+KIND            := kindest/node:v1.27.3
+POSTGRES        := postgres:15.3
+VAULT           := hashicorp/vault:1.13
+GRAFANA         := grafana/grafana:9.5.3
+PROMETHEUS      := prom/prometheus:v2.44.0
+TEMPO           := grafana/tempo:2.1.1
+TELEPRESENCE    := datawire/ambassador-telepresence-manager:2.14.0
+
+# ======================================================================
+# Install dependencies
+
+dev-gotooling:
+	go install github.com/divan/expvarmon@latest
+	go install github.com/rakyll/hey@latest
+	go install honnef.co/go/tools/cmd/staticcheck@latest
+	go install golang.org/x/vuln/cmd/govulncheck@latest
+	go install golang.org/x/tools/cmd/goimports@latest
+
+dev-brew-common:
+	brew update
+	brew tap hashicorp/tap
+	brew list kind || brew install kind
+	brew list kubectl || brew install kubectl
+	brew list kustomize || brew install kustomize
+	brew list pgcli || brew install pgcli
+	brew list vault || brew install vault
+
+dev-brew: dev-brew-common
+	brew list datawire/blackbird/telepresence || brew install datawire/blackbird/telepresence
+
+dev-docker:
+	docker pull $(GOLANG)
+	docker pull $(ALPINE)
+	docker pull $(KIND)
+	docker pull $(POSTGRES)
+	docker pull $(VAULT)
+	docker pull $(GRAFANA)
+	docker pull $(PROMETHEUS)
+	docker pull $(TEMPO)
+	docker pull $(TELEPRESENCE)
+
+# ======================================================================
+# Systems startup
+
 run-tasker:
 	go run app/services/tasker/main.go | go run app/tooling/logfmt/main.go
 
